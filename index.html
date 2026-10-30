@@ -36,6 +36,7 @@ header.top .wrap{display:flex;align-items:center;gap:14px;padding-top:18px;paddi
 .bar .wrap{padding-top:12px;padding-bottom:12px}
 .search{position:relative;display:block}
 .search input{width:100%;height:50px;border:0;border-radius:12px;padding:0 46px 0 46px;font-size:16px;background:#fff;outline:none}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
 .search input:focus{box-shadow:0 0 0 3px rgba(255,255,255,.35)}
 .search svg{position:absolute;left:15px;top:15px;width:20px;height:20px;color:var(--muted)}
 .search .clear{position:absolute;right:8px;top:8px;width:34px;height:34px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:22px;cursor:pointer;display:none}
@@ -130,6 +131,11 @@ footer{margin:34px 0 110px;color:var(--muted);font-size:12.5px;text-align:center
 .tot.disc span:last-child{color:var(--wa-dark);font-weight:600}
 .btn.off{background:#C9D0D8;color:#fff;pointer-events:none}
 .prices .iva .v{color:var(--navy)}
+.foto{margin:-14px -14px 4px;border-radius:var(--radius) var(--radius) 0 0;overflow:hidden;background:#fff;border-bottom:1px solid var(--line)}
+.foto img{display:block;width:100%;aspect-ratio:16/10;object-fit:contain;cursor:zoom-in;background:#fff}
+.zoom{position:fixed;inset:0;z-index:60;background:rgba(5,10,20,.88);display:none;align-items:center;justify-content:center;padding:16px;cursor:zoom-out}
+.zoom.show{display:flex}
+.zoom img{max-width:100%;max-height:100%;border-radius:10px;background:#fff}
 @media (max-width:640px){
   .brand p{display:none}
   .top-wa span{display:none}
@@ -192,6 +198,7 @@ footer{margin:34px 0 110px;color:var(--muted);font-size:12.5px;text-align:center
     <button class="btn btn-wa" id="obView" type="button" style="padding:0 18px">Ver carrito y hacer pedido</button>
   </div>
 </div>
+<div class="zoom" id="zoom" aria-hidden="true"><img id="zImg" alt=""></div>
 <div class="drawer-bg" id="dbg"></div>
 <div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dTitle">
   <header><h2 id="dTitle">Carrito</h2><button class="x" id="dClose" type="button" aria-label="Cerrar">×</button></header>
@@ -224,6 +231,14 @@ const $ = s => document.querySelector(s);
 const fmt = n => "$" + Math.round(n).toLocaleString("es-CO");
 const norm = s => (s || "").toString().normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const esc = s => (s || "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fotoName = r => r.toUpperCase().trim().replace(/[\s\/\\]+/g, "-");
+const fotoBase = r => fotoName(r).replace(/(\d)[GAI](?=$|-)/, "$1");
+function fotoErr(img) {
+  const tried = +(img.dataset.t || 0);
+  const base = img.dataset.b, full = img.dataset.f;
+  if (tried === 0 && base !== full) { img.dataset.t = 1; img.src = "fotos/" + base + ".jpg"; return; }
+  img.closest(".foto").remove();
+}
 const cleanMarca = m => m.replace(" (TRACTOMULA)", "");
 const waLink = text => "https://wa.me/" + WA + "?text=" + encodeURIComponent(text);
 
@@ -302,6 +317,7 @@ function card(it, words) {
     : `<div class="consult">Precio: consultar</div>`;
   const inOrder = order[it.id];
   return `<article class="card">
+    <div class="foto"><img loading="lazy" alt="${esc(it.r)}" src="fotos/${fotoName(it.r)}.jpg" data-f="${fotoName(it.r)}" data-b="${fotoBase(it.r)}" onerror="fotoErr(this)" onclick="zoom(this.src)"></div>
     <div class="line">${it.c}</div>
     <div class="head"><span class="ref">${hl(it.r, words)}</span>${badge}</div>
     <p class="desc">${hl(it.d || "Sin descripción", words)}</p>
@@ -399,6 +415,8 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") openDrawer(f
 $("#topWa").href = waLink("Hola Industrias JB, quiero hacer una consulta.");
 
 refreshSelects(); renderChips(); render(true); renderOrder();
+function zoom(src) { $("#zImg").src = src; $("#zoom").classList.add("show"); }
+$("#zoom").addEventListener("click", () => $("#zoom").classList.remove("show"));
 </script>
 </body>
 </html>
